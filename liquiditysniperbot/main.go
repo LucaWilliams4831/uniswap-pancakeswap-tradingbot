@@ -19,6 +19,11 @@ import (
 	pancakeFactory "github.com/nikola43/liquiditysniperbot/contracts/IPancakeFactory"
 	pancakePair "github.com/nikola43/liquiditysniperbot/contracts/IPancakePair"
 	"github.com/nikola43/web3golanghelper/web3helper"
+	"github.com/khrees2412/convas/database"
+	"github.com/khrees2412/convas/routes"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 )
 
 type Reserve struct {
@@ -29,39 +34,54 @@ type Reserve struct {
 
 func main() {
 
+	database.Connect()
+
+	app := fiber.New()
+
+	app.Use(cors.New(cors.Config{
+		AllowCredentials: true,
+	}))
+
+	routes.Setup(app)
+
+	PORT := os.Getenv("PORT") 
+	fmt.Println("Application started...")
+	app.Listen(fmt.Sprintf(":%s", PORT))
+	
 	// read .env variables
-	RPC_URL, WS_URL, WETH_ADDRESS, FACTORY_ADDRESS, TOKEN_ADDRESS, PK, BUY_AMOUNT, ROUTER_ADDRESS := readEnvVariables()
+	// RPC_URL, WS_URL, WETH_ADDRESS, FACTORY_ADDRESS, TOKEN_ADDRESS, PK, BUY_AMOUNT, ROUTER_ADDRESS := readEnvVariables()
 
-	web3GolangHelper := initWeb3(RPC_URL, WS_URL)
-	fromAddress := GeneratePublicAddressFromPrivateKey(PK)
 
-	// convert buy amount to float
+	// web3GolangHelper := initWeb3(RPC_URL, WS_URL)
+	// fromAddress := GeneratePublicAddressFromPrivateKey(PK)
 
-	// infinite loop
-	for {
-		// get pair address
-		lpPairAddress := getPair(web3GolangHelper, WETH_ADDRESS, FACTORY_ADDRESS, TOKEN_ADDRESS)
-		fmt.Println("LP Pair Address: " + lpPairAddress)
+	// // convert buy amount to float
 
-		if lpPairAddress != "0x0000000000000000000000000000000000000000" {
-			reserves := getReserves(web3GolangHelper, lpPairAddress)
+	// // infinite loop
+	// for {
+	// 	// get pair address
+	// 	lpPairAddress := getPair(web3GolangHelper, WETH_ADDRESS, FACTORY_ADDRESS, TOKEN_ADDRESS)
+	// 	fmt.Println("LP Pair Address: " + lpPairAddress)
 
-			fmt.Println("Reserve0: " + reserves.Reserve0.String())
-			fmt.Println("Reserve1: " + reserves.Reserve1.String())
+	// 	if lpPairAddress != "0x0000000000000000000000000000000000000000" {
+	// 		reserves := getReserves(web3GolangHelper, lpPairAddress)
 
-			// check if reserves is greater than 0
-			if reserves.Reserve0.Cmp(big.NewInt(0)) > 0 && reserves.Reserve1.Cmp(big.NewInt(0)) > 0 {
-				buyAmount, err := strconv.ParseFloat(BUY_AMOUNT, 32)
-				if err != nil {
-					fmt.Println(err)
-				}
-				web3GolangHelper.Buy(ROUTER_ADDRESS, WETH_ADDRESS, PK, fromAddress, TOKEN_ADDRESS, buyAmount)
-				os.Exit(0)
-			}
-		}
-		// sleep 1 second
-		time.Sleep(1 * time.Millisecond)
-	}
+	// 		fmt.Println("Reserve0: " + reserves.Reserve0.String())
+	// 		fmt.Println("Reserve1: " + reserves.Reserve1.String())
+
+	// 		// check if reserves is greater than 0
+	// 		if reserves.Reserve0.Cmp(big.NewInt(0)) > 0 && reserves.Reserve1.Cmp(big.NewInt(0)) > 0 {
+	// 			buyAmount, err := strconv.ParseFloat(BUY_AMOUNT, 32)
+	// 			if err != nil {
+	// 				fmt.Println(err)
+	// 			}
+	// 			web3GolangHelper.Buy(ROUTER_ADDRESS, WETH_ADDRESS, PK, fromAddress, TOKEN_ADDRESS, buyAmount)
+	// 			os.Exit(0)
+	// 		}
+	// 	}
+	// 	// sleep 1 second
+	// 	time.Sleep(1 * time.Millisecond)
+	// }
 }
 
 func OpenBrowser(url string) {
